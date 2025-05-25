@@ -5,48 +5,14 @@ from datasets import load_dataset
 import pandas as pd
 import torch
 import torchvision
-
-#
-# import torch
-# from diffsynth import ModelManager, WanVideoPipeline, save_video, VideoData
-#
-num_samples = 20
-model_variant = '1.3b_inp'
-# use_lora = True
-use_lora = False
-
-# model_manager = ModelManager(torch_dtype=torch.bfloat16, device="cpu")
-# if model_variant == '1.3b':
-#     model_manager.load_models([
-#         "models/Wan-AI/Wan2.1-T2V-1.3B/diffusion_pytorch_model.safetensors",
-#         "models/Wan-AI/Wan2.1-T2V-1.3B/models_t5_umt5-xxl-enc-bf16.pth",
-#         "models/Wan-AI/Wan2.1-T2V-1.3B/Wan2.1_VAE.pth",
-#     ])
-#     if use_lora:
-#         model_manager.load_lora("models/lightning_logs/t2i_1.3b/checkpoints/epoch=9-step=5000.ckpt", lora_alpha=1.0)
-# elif model_variant == '14b':
-#     model_manager.load_models([
-#         [
-#             "models/Wan-AI/Wan2.1-T2V-14B/diffusion_pytorch_model-00001-of-00006.safetensors",
-#             "models/Wan-AI/Wan2.1-T2V-14B/diffusion_pytorch_model-00002-of-00006.safetensors",
-#             "models/Wan-AI/Wan2.1-T2V-14B/diffusion_pytorch_model-00003-of-00006.safetensors",
-#             "models/Wan-AI/Wan2.1-T2V-14B/diffusion_pytorch_model-00004-of-00006.safetensors",
-#             "models/Wan-AI/Wan2.1-T2V-14B/diffusion_pytorch_model-00005-of-00006.safetensors",
-#             "models/Wan-AI/Wan2.1-T2V-14B/diffusion_pytorch_model-00006-of-00006.safetensors",
-#         ],
-#         "models/Wan-AI/Wan2.1-T2V-14B/models_t5_umt5-xxl-enc-bf16.pth",
-#         "models/Wan-AI/Wan2.1-T2V-14B/Wan2.1_VAE.pth",
-#     ])
-#     if use_lora:
-#         model_manager.load_lora("models/lightning_logs/t2i_14b/checkpoints/epoch=9-step=5000.ckpt", lora_alpha=1.0)
-#
-# pipe = WanVideoPipeline.from_model_manager(model_manager, device="cuda")
-# pipe.enable_vram_management(num_persistent_param_in_dit=None)
-
-import torch
 from diffsynth import ModelManager, WanVideoPipeline, save_video, VideoData
 from modelscope import snapshot_download, dataset_snapshot_download
 from PIL import Image
+
+num_samples = 20
+model_variant = '1.3b_inp'
+use_lora = True
+# use_lora = False
 
 
 # Download models
@@ -64,6 +30,8 @@ if model_variant == '1.3b_inp':
         ],
         torch_dtype=torch.bfloat16, # You can set `torch_dtype=torch.float8_e4m3fn` to enable FP8 quantization.
     )
+    if use_lora:
+        model_manager.load_lora("models/lightning_logs/i2v_1.3b/checkpoints/epoch=9-step=1670.ckpt", lora_alpha=1.0)
 else:
     raise ValueError(f"Unsupported model variant: {model_variant}")
 pipe = WanVideoPipeline.from_model_manager(model_manager, torch_dtype=torch.bfloat16, device="cuda")
@@ -91,6 +59,7 @@ for i, data in enumerate(load_dataset("webdataset", data_files={"train": ds_url}
         # The model will automatically generate the dynamic content between `input_image` and `end_image`.
         seed=i, tiled=True
     )
+    video[0] = image # Ensure the first frame aligns with the input image
     dirname = f"test_out_{model_variant}{'_ft' if use_lora else ''}"
     os.makedirs(dirname, exist_ok=True)
     save_video(video, os.path.join(dirname, f"video_{i:02}.mp4"), fps=15)

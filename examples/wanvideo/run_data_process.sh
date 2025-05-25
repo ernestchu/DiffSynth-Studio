@@ -1,0 +1,11 @@
+CUDA_VISIBLE_DEVICES="4,5" python train_wan_t2v.py \
+  --task data_process \
+  --dataset_path /home/schu23/store/datasets/celebv/data \
+  --output_path ./models \
+  --text_encoder_path "models/PAI/Wan2.1-Fun-1.3B-InP/models_t5_umt5-xxl-enc-bf16.pth" \
+  --vae_path "models/PAI/Wan2.1-Fun-1.3B-InP/Wan2.1_VAE.pth" \
+  --image_encoder_path "models/PAI/Wan2.1-Fun-1.3B-InP/models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth" \
+  --tiled \
+  --num_frames 81 \
+  --height 384 \
+  --width 384
